@@ -3,8 +3,8 @@ using PlotlyJS, HTTP, JSON, DataFrames, CSV, WebIO
 
 println("Cargando barras y lineas...")
 # --- Leer archivos ---
-dfBarras = CSV.read("Coordenadas_Barras3.csv", DataFrame)
-dfLineas = CSV.read("lineas_codigos3.csv", DataFrame)
+dfBarras = CSV.read("Barras.csv", DataFrame)
+dfLineas = CSV.read("Lineas.csv", DataFrame)
 
 
 
@@ -61,7 +61,8 @@ for row in eachrow(dfLineas_filtrado)
     ancho = row.proy == 1 ? 1 : 3       # más finas si son proyecto
     opac  = row.proy == 1 ? 0.3 : 1.0  # más transparentes si son proyecto
 
-    push!(lineas_traces, scattermapbox(
+    if row.tension > 100.0
+     push!(lineas_traces, scattermapbox(
         lat = [row.OrigenLat, row.DestinoLat],
         lon = [row.OrigenLon, row.DestinoLon],
         mode = "lines",
@@ -69,7 +70,8 @@ for row in eachrow(dfLineas_filtrado)
         opacity = opac,
         name = "",
         showlegend = false
-    ))
+     ))
+    end
 
 #=    # punto medio para mostrar el texto fijo km
     mid_lat = (row.OrigenLat + row.DestinoLat) / 2
@@ -97,6 +99,8 @@ leyenda_traces = [
 # --- Layout del mapa ---
 layout = Layout(
     title = "Mapa SEIN",
+    width = 1200,    # ancho en píxeles
+    height = 900,    # alto en píxeles
     showlegend = true,
     mapbox = attr(
         style = "carto-positron", #open-street-map

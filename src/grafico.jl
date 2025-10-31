@@ -1,10 +1,19 @@
 using PlotlyJS, HTTP, JSON, DataFrames, CSV, WebIO
 
 
+function tofloat(x)
+    if x isa AbstractString
+        return parse(Float64, x)
+    else
+        return Float64(x)   # asegura que sea Float64 si es Int o similar
+    end
+end
+
+
 println("Cargando barras y lineas...")
 # --- Leer archivos ---
 dfBarras = CSV.read("Barras.csv", DataFrame)
-dfLineas = CSV.read("Lineas.csv", DataFrame)
+dfLineas = CSV.read("Lineas_base.csv", DataFrame)
 
 
 
@@ -58,9 +67,12 @@ for row in eachrow(dfLineas_filtrado)
     end
 
     # Diferenciar líneas de proyecto
-    ancho = row.proy == 1 ? 1 : 3       # más finas si son proyecto
+    
+	ancho = row.proy == 1 ? 1 : 3       # más finas si son proyecto
     opac  = row.proy == 1 ? 0.3 : 1.0  # más transparentes si son proyecto
 
+	ancho = row.q3 < .6 ? 3 : 6       # más gruesas si tienen congestiones.
+	
     if row.tension > 100.0
      push!(lineas_traces, scattermapbox(
         lat = [row.OrigenLat, row.DestinoLat],
@@ -72,20 +84,22 @@ for row in eachrow(dfLineas_filtrado)
         showlegend = false
      ))
     end
+	#display(row.OrigenLat)
 
-#=    # punto medio para mostrar el texto fijo km
-    mid_lat = (row.OrigenLat + row.DestinoLat) / 2
-    mid_lon = (row.OrigenLon + row.DestinoLon) / 2
+  # punto medio para mostrar el texto fijo km
+	mid_lat = (tofloat(row.OrigenLat) + tofloat(row.DestinoLat)) / 2.0
+	mid_lon = (tofloat(row.OrigenLon) + tofloat(row.DestinoLon)) / 2.0
+
 
     push!(lineas_traces, scattermapbox(
         lat = [mid_lat],
         lon = [mid_lon],
         mode = "text",
-        text = [string(round(row.Km, digits=1), " km")],
+        text = [string(round(row.q3*100, digits=1), " - ", round(row.max*100, digits=1), " % ")],
         textfont = attr(size=10, color=color_linea),
         showlegend = false,
         name = "longitud"
-    ))=#
+    ))
 end
 
 # --- Trazas dummy para leyenda ---
